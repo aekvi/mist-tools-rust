@@ -1,6 +1,6 @@
 mod envelope;
 mod mime_types;
-mod mist;
+pub mod mist;
 mod mist_tools;
 
 use envelope::Envelope;
