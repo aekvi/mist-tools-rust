@@ -2,16 +2,15 @@ use crate::{mime_types, Envelope, MimeType, MistTools};
 use reqwest::blocking::{Client, RequestBuilder, Response};
 use std::env;
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::{self, Read};
 
-pub struct Mist<'a> {
-    action: &'static str,
-    envelope: Envelope<'a>,
+pub struct Mist {
+    action: String,
+    envelope: Envelope,
     payload: Vec<u8>,
 }
 
-impl MistTools for Mist<'_> {
+impl MistTools for Mist {
     fn handle(
         &self,
         action: &'static str,
@@ -29,7 +28,7 @@ impl MistTools for Mist<'_> {
     }
 }
 
-impl Mist<'_> {
+impl Mist {
     fn get_payload() -> Result<Vec<u8>, &'static str> {
         let mut buffer = Vec::new();
         io::stdin()
@@ -37,20 +36,21 @@ impl Mist<'_> {
             .unwrap_or_else(|_| panic!("unable to read from stdin"));
         Ok(buffer)
     }
-    fn new(args: Vec<&'static str>) -> Result<Self, &'static str> {
-        let action = args[args.len() - 2];
-        let envelope = Envelope::new(args[args.len() - 1])
-            .unwrap_or_else(|_| panic!("unable to parse envelope from {}", args[args.len() - 1]));
+    fn new(args: Vec<String>) -> Result<Self, &'static str> {
+        let action = &args[args.len() - 2];
+        let json = &args[args.len() - 1];
+        let envelope = Envelope::new(json)
+            .unwrap_or_else(|_| panic!("unable to parse envelope from {}", json));
         let payload = Self::get_payload()?;
         Ok(Mist {
-            action,
+            action: action.clone(),
             envelope,
             payload,
         })
     }
 }
 
-pub fn service(args: Vec<&'static str>) -> Result<Mist, &'static str> {
+pub fn service(args: Vec<String>) -> Result<Mist, &'static str> {
     Mist::new(args)
 }
 
