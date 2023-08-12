@@ -123,10 +123,21 @@ pub fn reply_file_to_origin_with_content_type(
     path: &'static str,
     content_type: MimeType,
 ) -> Result<(), String> {
-    let mut file = File::open(path).unwrap_or_else(|_| panic!("unable to open file '{}'", path));
+    let mut file = File::open(path).map_err(|_| {
+        let mut s = "unable to open file '".to_owned();
+        s.push_str(path);
+        s.push('\'');
+        s
+    })?;
+
     let mut body = Vec::new();
-    file.read_to_end(&mut body)
-        .unwrap_or_else(|_| panic!("unable to read file '{}'", path));
+    file.read_to_end(&mut body).map_err(|_| {
+        let mut s = "unable to read file '".to_owned();
+        s.push_str(path);
+        s.push('\'');
+        s
+    })?;
+
     post_to_rapids("$reply", body, content_type)
 }
 
