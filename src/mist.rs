@@ -14,13 +14,16 @@ impl MistTools for Mist {
     fn handle(
         &self,
         action: &'static str,
-        handler: impl FnOnce(Vec<u8>, Envelope) -> Result<(), &'static str>,
-    ) -> &Self {
+        handler: impl FnOnce(Vec<u8>, Envelope) -> Result<(), String>,
+    ) -> Result<&Self, String> {
         if self.action == action {
-            handler(self.payload.clone(), self.envelope.clone())
-                .unwrap_or_else(|_| panic!("unable to execute action {}", action));
+            handler(self.payload.clone(), self.envelope.clone()).map_err(|_| {
+                let mut s = "unable to execute action ".to_owned();
+                s.push_str(action);
+                s
+            })?;
         }
-        self
+        Ok(self)
     }
 
     fn init(&self, handler: impl FnOnce() -> Result<(), &'static str>) -> Result<(), &'static str> {
