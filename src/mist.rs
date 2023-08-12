@@ -1,64 +1,46 @@
-use crate::{mime_types, Envelope, MimeType, MistTools};
+use crate::{mime_types, Envelope, MimeType};
 use reqwest::blocking::{Client, RequestBuilder, Response};
 use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 
-pub struct Mist {
-    action: &'static str,
-    envelope: Envelope,
-    payload: Vec<u8>,
-}
+pub struct ActionHandler<T>(&'static str, T)
+where
+    T: FnOnce(Vec<u8>, Envelope) -> Result<(), String>;
 
-impl MistTools for Mist {
-    fn handle(
-        &self,
-        action: &'static str,
-        handler: impl FnOnce(Vec<u8>, Envelope) -> Result<(), String>,
-    ) -> Result<&Self, String> {
-        if self.action == action {
-            handler(self.payload.clone(), self.envelope.clone()).map_err(|_| {
-                let mut s = "unable to execute action ".to_owned();
-                s.push_str(action);
-                s
-            })?;
+pub fn mist_service<A, B>(handlers: Vec<ActionHandler<A>>, init: Option<B>) -> Result<(), String>
+where
+    A: FnOnce(Vec<u8>, Envelope) -> Result<(), String>,
+    B: FnOnce() -> Result<(), &'static str>,
+{
+    let (arg_action, envelope) = get_args()?;
+    for ActionHandler(action, handler) in handlers {
+        if action == arg_action {
+            handler(get_payload()?, envelope)?;
+            break;
         }
-        Ok(self)
     }
 
-    fn init(&self, handler: impl FnOnce() -> Result<(), &'static str>) -> Result<(), &'static str> {
-        handler()
+    if let Some(f) = init {
+        f()?
     }
+
+    Ok(())
 }
 
-impl Mist {
-    fn get_payload() -> Result<Vec<u8>, &'static str> {
-        let mut buffer = Vec::new();
-        io::stdin()
-            .read_to_end(&mut buffer)
-            .map_err(|_| "unable to read from stdin")?;
-        Ok(buffer)
-    }
-
-    fn new(args: Vec<&'static str>) -> Result<Self, String> {
-        let action = args[args.len() - 2];
-        let json = args[args.len() - 1];
-        let envelope = Envelope::new(json).map_err(|_| {
-            let mut s = "unable to parse envelope from ".to_owned();
-            s.push_str(json);
-            s
-        })?;
-        let payload = Self::get_payload()?;
-        Ok(Mist {
-            action,
-            envelope,
-            payload,
-        })
-    }
+fn get_payload() -> Result<Vec<u8>, &'static str> {
+    let mut buffer = Vec::new();
+    io::stdin()
+        .read_to_end(&mut buffer)
+        .map_err(|_| "unable to read from stdin")?;
+    Ok(buffer)
 }
 
-pub fn service(args: Vec<&'static str>) -> Result<Mist, String> {
-    Mist::new(args)
+fn get_args() -> Result<(String, Envelope), String> {
+    let args: Vec<_> = env::args().collect();
+    let action = args[args.len() - 2].clone();
+    let envelope = Envelope::new(args[args.len() - 1].as_str())?;
+    Ok((action, envelope))
 }
 
 fn internal_post_to_rapids(
