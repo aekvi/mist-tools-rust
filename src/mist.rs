@@ -36,9 +36,10 @@ impl Mist {
         let mut buffer = Vec::new();
         io::stdin()
             .read_to_end(&mut buffer)
-            .unwrap_or_else(|_| panic!("unable to read from stdin"));
+            .map_err(|_| "unable to read from stdin")?;
         Ok(buffer)
     }
+
     fn new(args: Vec<String>) -> Result<Self, &'static str> {
         let action = &args[args.len() - 2];
         let json = &args[args.len() - 1];
