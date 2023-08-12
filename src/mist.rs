@@ -142,11 +142,25 @@ pub fn reply_file_to_origin_with_content_type(
 }
 
 pub fn reply_file_to_origin(path: &'static str) -> Result<(), String> {
-    let file_ext = path
-        .split('.')
-        .last()
-        .unwrap_or_else(|| panic!("unable to locate file extension from file path '{}'", path));
-    let content_type = mime_types::ext2mime(file_ext)
-        .unwrap_or_else(|| panic!("unknown file extension from file path '{}'", path));
-    reply_file_to_origin_with_content_type(path, content_type)
+    let file_ext = path.split('.').last();
+    match file_ext {
+        Some(f) => {
+            let content_type = mime_types::ext2mime(f);
+            match content_type {
+                Some(ct) => reply_file_to_origin_with_content_type(path, ct),
+                None => {
+                    let mut s = "unknown file extension from file path '".to_owned();
+                    s.push_str(path);
+                    s.push('\'');
+                    Err(s)
+                }
+            }
+        }
+        None => {
+            let mut s = "unable to locate file extension from file path '".to_owned();
+            s.push_str(path);
+            s.push('\'');
+            Err(s)
+        }
+    }
 }
