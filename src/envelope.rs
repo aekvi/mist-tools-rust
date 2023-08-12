@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Envelope {
-    message_id: String,
-    trace_id: String,
+    messageId: String,
+    traceId: String,
 }
 
 impl Envelope {
