@@ -1,8 +1,10 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize)]
 pub struct Envelope {
+    #[serde(alias = "messageId")]
     message_id: String,
+    #[serde(alias = "traceId")]
     trace_id: String,
 }
 
