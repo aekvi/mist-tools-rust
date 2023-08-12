@@ -4,32 +4,38 @@ use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 
-pub struct ActionHandler<T>(pub &'static str, pub T)
-where
-    T: FnOnce(Vec<u8>, Envelope) -> Result<(), String>;
+type ActionHandler = (
+    &'static str,
+    Box<dyn FnOnce(Vec<u8>, Envelope) -> Result<(), String>>,
+);
 
 /// Entry point for registering services on certain actions.
 ///
 /// # Examples
 ///
 /// ```
-/// use mist_tools_rust::{mist_service, ActionHandler, Envelope};
+/// use mist_tools_rust::{mist_service, Envelope};
 ///
 /// // Some dummy action
 /// pub fn handle_english_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
 ///     Ok(())
 /// }
 ///
-/// mist_service(vec![ActionHandler("hello", handle_english_action)], || Ok(()));
+/// // Some other dummy action
+/// pub fn handle_spanish_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
+///     println!("reached spanish handler!");
+///     Ok(())
+/// }
+///
+/// mist_service(vec![("hello", Box::new(handle_english_action)), ("hola", Box::new(handle_spanish_action))], || Ok(()));
 /// ```
 ///
-pub fn mist_service<A, B>(handlers: Vec<ActionHandler<A>>, init: B) -> Result<(), String>
+pub fn mist_service<A>(handlers: Vec<ActionHandler>, init: A) -> Result<(), String>
 where
-    A: FnOnce(Vec<u8>, Envelope) -> Result<(), String>,
-    B: FnOnce() -> Result<(), &'static str>,
+    A: FnOnce() -> Result<(), &'static str>,
 {
     let (arg_action, envelope) = get_args()?;
-    for ActionHandler(action, handler) in handlers {
+    for (action, handler) in handlers {
         if action == arg_action {
             handler(get_payload()?, envelope)?;
             break;
