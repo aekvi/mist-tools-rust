@@ -9,7 +9,7 @@ pub struct Envelope {
 
 impl Envelope {
     pub fn new(json: &str) -> Result<Self> {
-        let envelope: Envelope = serde_json::from_str(json.clone())?;
+        let envelope: Envelope = serde_json::from_str(json)?;
         Ok(envelope)
     }
 }
