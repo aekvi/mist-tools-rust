@@ -9,7 +9,8 @@ Optionally, you can provide an `init` function.
 ```rust
 use mist_tools_rust::{mist_service, Envelope};
 
-pub fn main() {
+// Requires main returns Result<(), String>
+pub fn main() -> Result<(), String> {
     mist_service!(
         {
             actions: {
