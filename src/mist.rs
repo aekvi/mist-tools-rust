@@ -55,7 +55,7 @@ pub fn get_payload() -> Result<Vec<u8>, &'static str> {
     Ok(buffer)
 }
 
-fn get_args() -> Result<(String, Envelope), &'static str> {
+pub fn get_args() -> Result<(String, Envelope), &'static str> {
     let mut args: Vec<_> = env::args().collect();
     let envelope_str = args
         .pop()
