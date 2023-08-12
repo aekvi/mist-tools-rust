@@ -4,7 +4,7 @@ use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 
-type ActionHandler = (
+pub type ActionHandler = (
     &'static str,
     Box<dyn FnOnce(Vec<u8>, Envelope) -> Result<(), String>>,
 );
