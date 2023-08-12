@@ -14,7 +14,7 @@ pub type ActionHandler = (
 /// # Examples
 ///
 /// ```
-/// use mist_tools_rust::{mist_service, Envelope};
+/// use mist_tools::{mist_service, Envelope};
 ///
 /// // Some dummy action
 /// pub fn handle_english_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
@@ -55,30 +55,17 @@ pub fn get_payload() -> Result<Vec<u8>, &'static str> {
     Ok(buffer)
 }
 
-pub fn get_args() -> Result<(String, Envelope), String> {
-    let args = env::args();
-    if args.len() < 3 {
-        return Err("Insufficient program arguments".to_string());
-    }
-    let args = args.rev().take(2);
-    let mut action = None;
-    let mut envelope = None;
-    for (i, arg) in args.enumerate() {
-        match i {
-            0 => {
-                action = Some(arg);
-            }
-            1 => {
-                envelope = Some(Envelope::new(arg.as_str())?);
-            }
-            _ => unreachable!(),
-        }
-    }
-    match (action, envelope) {
-        (Some(a), Some(e)) => Ok((a, e)),
-        (None, _) => Err("Unable to get action".to_string()),
-        _ => unreachable!(),
-    }
+fn get_args() -> Result<(String, Envelope), &'static str> {
+    let mut args: Vec<_> = env::args().collect();
+    let envelope_str = args
+        .pop()
+        .ok_or("unable to read 'envelope' from program arguments")?;
+    let envelope = Envelope::new(envelope_str.as_str())?;
+    let action = args
+        .pop()
+        .ok_or("unable to read 'action' from program arguments")?;
+
+    Ok((action.to_string(), envelope))
 }
 
 fn internal_post_to_rapids(
@@ -91,14 +78,8 @@ fn internal_post_to_rapids(
     let client = Client::new();
     let init_request_builder = client.post(&event_url);
 
-    request_completer(init_request_builder).map_err(|_| {
-        let mut s = "unable to post event '".to_owned();
-        s.push_str(event);
-        s.push_str("' to url '");
-        s.push_str(event_url.as_str());
-        s.push('\'');
-        s
-    })?;
+    request_completer(init_request_builder)
+        .map_err(|_| format!("unable to post event '{}' to url '{}'", event, event_url))?;
 
     Ok(())
 }
@@ -143,20 +124,11 @@ pub fn reply_file_to_origin_with_content_type(
     path: &'static str,
     content_type: MimeType,
 ) -> Result<(), String> {
-    let mut file = File::open(path).map_err(|_| {
-        let mut s = "unable to open file '".to_owned();
-        s.push_str(path);
-        s.push('\'');
-        s
-    })?;
+    let mut file = File::open(path).map_err(|_| format!("unable to open file '{}'", path))?;
 
     let mut body = Vec::new();
-    file.read_to_end(&mut body).map_err(|_| {
-        let mut s = "unable to read file '".to_owned();
-        s.push_str(path);
-        s.push('\'');
-        s
-    })?;
+    file.read_to_end(&mut body)
+        .map_err(|_| format!("unable to read file '{}'", path))?;
 
     post_to_rapids("$reply", body, content_type)
 }
@@ -168,19 +140,12 @@ pub fn reply_file_to_origin(path: &'static str) -> Result<(), String> {
             let content_type = mime_types::ext2mime(f);
             match content_type {
                 Some(ct) => reply_file_to_origin_with_content_type(path, ct),
-                None => {
-                    let mut s = "unknown file extension from file path '".to_owned();
-                    s.push_str(path);
-                    s.push('\'');
-                    Err(s)
-                }
+                None => Err(format!("unknown file extension from file path '{}'", path)),
             }
         }
-        None => {
-            let mut s = "unable to locate file extension from file path '".to_owned();
-            s.push_str(path);
-            s.push('\'');
-            Err(s)
-        }
+        None => Err(format!(
+            "unable to locate file extension from file path '{}'",
+            path
+        )),
     }
 }
