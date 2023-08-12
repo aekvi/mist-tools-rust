@@ -64,16 +64,22 @@ pub fn service(args: Vec<&'static str>) -> Result<Mist, String> {
 fn internal_post_to_rapids(
     event: &'static str,
     request_completer: impl FnOnce(RequestBuilder) -> Result<Response, reqwest::Error>,
-) -> Result<(), &'static str> {
-    let rapids_url =
-        env::var("RAPIDS").unwrap_or_else(|_| panic!("RAPIDS environment variable not set"));
+) -> Result<(), String> {
+    let rapids_url = env::var("RAPIDS").map_err(|_| "RAPIDS environment variable not set")?;
     let event_url = format!("{}/{}", rapids_url, event);
 
     let client = Client::new();
     let init_request_builder = client.post(&event_url);
 
-    request_completer(init_request_builder)
-        .unwrap_or_else(|_| panic!("unable to post event '{}' to url '{}'", event, event_url));
+    request_completer(init_request_builder).map_err(|_| {
+        let mut s = "unable to post event '".to_owned();
+        s.push_str(event);
+        s.push_str("' to url '");
+        s.push_str(event_url.as_str());
+        s.push('\'');
+        s
+    })?;
+
     Ok(())
 }
 
@@ -81,7 +87,7 @@ pub fn post_to_rapids(
     event: &'static str,
     body: Vec<u8>,
     content_type: MimeType,
-) -> Result<(), &'static str> {
+) -> Result<(), String> {
     internal_post_to_rapids(event, |r| {
         r.header("Content-Type", content_type.to_string())
             .body(body)
@@ -93,7 +99,7 @@ pub fn post_str_to_rapids(
     event: &'static str,
     body: &'static str,
     content_type: MimeType,
-) -> Result<(), &'static str> {
+) -> Result<(), String> {
     internal_post_to_rapids(event, |r| {
         r.header("Content-Type", content_type.to_string())
             .body(body)
@@ -101,22 +107,22 @@ pub fn post_str_to_rapids(
     })
 }
 
-pub fn post_event_to_rapids(event: &'static str) -> Result<(), &'static str> {
+pub fn post_event_to_rapids(event: &'static str) -> Result<(), String> {
     internal_post_to_rapids(event, |r| r.send())
 }
 
-pub fn reply_to_origin(body: Vec<u8>, content_type: MimeType) -> Result<(), &'static str> {
+pub fn reply_to_origin(body: Vec<u8>, content_type: MimeType) -> Result<(), String> {
     post_to_rapids("$reply", body, content_type)
 }
 
-pub fn reply_str_to_origin(body: &'static str, content_type: MimeType) -> Result<(), &'static str> {
+pub fn reply_str_to_origin(body: &'static str, content_type: MimeType) -> Result<(), String> {
     post_str_to_rapids("$reply", body, content_type)
 }
 
 pub fn reply_file_to_origin_with_content_type(
     path: &'static str,
     content_type: MimeType,
-) -> Result<(), &'static str> {
+) -> Result<(), String> {
     let mut file = File::open(path).unwrap_or_else(|_| panic!("unable to open file '{}'", path));
     let mut body = Vec::new();
     file.read_to_end(&mut body)
@@ -124,7 +130,7 @@ pub fn reply_file_to_origin_with_content_type(
     post_to_rapids("$reply", body, content_type)
 }
 
-pub fn reply_file_to_origin(path: &'static str) -> Result<(), &'static str> {
+pub fn reply_file_to_origin(path: &'static str) -> Result<(), String> {
     let file_ext = path
         .split('.')
         .last()
