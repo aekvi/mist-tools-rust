@@ -11,13 +11,18 @@ pub use mist::{
 
 #[macro_export]
 macro_rules! mist_service {
-    ( { actions: { $( $a:literal : $h:ident ) , * } , init: $i:ident } ) => {
+    ( { actions: { $( $a:literal : $h:ident ) , * } $(, init: $i:ident )? } ) => {
         {
             let mut v: Vec<(&'static str, Box<dyn FnOnce(Vec<u8>, Envelope) -> Result<(), String>>)> = Vec::new();
             $(
                 v.push(($a, Box::new($h)));
             )*
-            mist_service(v, $i).unwrap()
+            match true {
+            $(
+                true => mist_service(v, $i).unwrap(),
+            )?
+                _ => mist_service(v, || Ok(())).unwrap()
+            }
         }
     };
 }
