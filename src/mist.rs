@@ -56,29 +56,16 @@ fn get_payload() -> Result<Vec<u8>, &'static str> {
 }
 
 fn get_args() -> Result<(String, Envelope), &'static str> {
-    let args = env::args().rev().take(2);
-    if args.len() < 3 {
-        Err("Insufficient program arguments")
-    } else {
-        let mut action = None;
-        let mut envelope = None;
-        for (i, arg) in args.enumerate() {
-            match i {
-                0 => {
-                    action = Some(arg);
-                }
-                1 => {
-                    envelope = Some(Envelope::new(arg.as_str())?);
-                }
-                _ => unreachable!(),
-            }
-        }
-        match (action, envelope) {
-            (Some(a), Some(e)) => Ok((a, e)),
-            (None, _) => Err("Unable to get action"),
-            _ => unreachable!(),
-        }
-    }
+    let args: Vec<_> = env::args().collect();
+    let action = args
+        .get(args.len() - 2)
+        .ok_or("unable to read 'action' from program arguments")?;
+    let envelope_str = args
+        .last()
+        .ok_or("unable to read 'envelope' from program arguments")?;
+    let envelope = Envelope::new(envelope_str.as_str())?;
+
+    Ok((action.to_string(), envelope))
 }
 
 fn internal_post_to_rapids(
