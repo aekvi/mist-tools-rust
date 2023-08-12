@@ -14,7 +14,7 @@ pub type ActionHandler = (
 /// # Examples
 ///
 /// ```
-/// use mist_tools_rust::{mist_service, Envelope};
+/// use mist_tools::{mist_service, Envelope};
 ///
 /// // Some dummy action
 /// pub fn handle_english_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
