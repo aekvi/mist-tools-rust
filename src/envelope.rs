@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Envelope {
@@ -8,8 +7,9 @@ pub struct Envelope {
 }
 
 impl Envelope {
-    pub fn new(json: &str) -> Result<Self> {
-        let envelope: Envelope = serde_json::from_str(json)?;
+    pub fn new(json: &str) -> Result<Self, String> {
+        let envelope: Envelope =
+            serde_json::from_str(json).map_err(|_| "Unable to parse envelope from json")?;
         Ok(envelope)
     }
 }

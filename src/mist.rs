@@ -1,64 +1,84 @@
-use crate::{mime_types, Envelope, MimeType, MistTools};
+use crate::{mime_types, Envelope, MimeType};
 use reqwest::blocking::{Client, RequestBuilder, Response};
 use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 
-pub struct Mist {
-    action: &'static str,
-    envelope: Envelope,
-    payload: Vec<u8>,
-}
+type ActionHandler = (
+    &'static str,
+    Box<dyn FnOnce(Vec<u8>, Envelope) -> Result<(), String>>,
+);
 
-impl MistTools for Mist {
-    fn handle(
-        &self,
-        action: &'static str,
-        handler: impl FnOnce(Vec<u8>, Envelope) -> Result<(), String>,
-    ) -> Result<&Self, String> {
-        if self.action == action {
-            handler(self.payload.clone(), self.envelope.clone()).map_err(|_| {
-                let mut s = "unable to execute action ".to_owned();
-                s.push_str(action);
-                s
-            })?;
+/// Entry point for registering services on certain actions.
+///
+/// # Examples
+///
+/// ```
+/// use mist_tools_rust::{mist_service, Envelope};
+///
+/// // Some dummy action
+/// pub fn handle_english_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
+///     Ok(())
+/// }
+///
+/// // Some other dummy action
+/// pub fn handle_spanish_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
+///     println!("reached spanish handler!");
+///     Ok(())
+/// }
+///
+/// mist_service(vec![("hello", Box::new(handle_english_action)), ("hola", Box::new(handle_spanish_action))], || Ok(()));
+/// ```
+///
+pub fn mist_service<A>(handlers: Vec<ActionHandler>, init: A) -> Result<(), String>
+where
+    A: FnOnce() -> Result<(), &'static str>,
+{
+    let (arg_action, envelope) = get_args()?;
+    for (action, handler) in handlers {
+        if action == arg_action {
+            handler(get_payload()?, envelope)?;
+            break;
         }
-        Ok(self)
     }
 
-    fn init(&self, handler: impl FnOnce() -> Result<(), &'static str>) -> Result<(), &'static str> {
-        handler()
-    }
+    init()?;
+
+    Ok(())
 }
 
-impl Mist {
-    fn get_payload() -> Result<Vec<u8>, &'static str> {
-        let mut buffer = Vec::new();
-        io::stdin()
-            .read_to_end(&mut buffer)
-            .map_err(|_| "unable to read from stdin")?;
-        Ok(buffer)
-    }
-
-    fn new(args: Vec<&'static str>) -> Result<Self, String> {
-        let action = args[args.len() - 2];
-        let json = args[args.len() - 1];
-        let envelope = Envelope::new(json).map_err(|_| {
-            let mut s = "unable to parse envelope from ".to_owned();
-            s.push_str(json);
-            s
-        })?;
-        let payload = Self::get_payload()?;
-        Ok(Mist {
-            action,
-            envelope,
-            payload,
-        })
-    }
+fn get_payload() -> Result<Vec<u8>, &'static str> {
+    let mut buffer = Vec::new();
+    io::stdin()
+        .read_to_end(&mut buffer)
+        .map_err(|_| "unable to read from stdin")?;
+    Ok(buffer)
 }
 
-pub fn service(args: Vec<&'static str>) -> Result<Mist, String> {
-    Mist::new(args)
+fn get_args() -> Result<(String, Envelope), String> {
+    let args = env::args().rev().take(2);
+    if args.len() < 3 {
+        Err("Insufficient program arguments".to_string())
+    } else {
+        let mut action = None;
+        let mut envelope = None;
+        for (i, arg) in args.enumerate() {
+            match i {
+                0 => {
+                    action = Some(arg);
+                }
+                1 => {
+                    envelope = Some(Envelope::new(arg.as_str())?);
+                }
+                _ => unreachable!(),
+            }
+        }
+        match (action, envelope) {
+            (Some(a), Some(e)) => Ok((a, e)),
+            (None, _) => Err("Unable to get action".to_string()),
+            _ => unreachable!(),
+        }
+    }
 }
 
 fn internal_post_to_rapids(
