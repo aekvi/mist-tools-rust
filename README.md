@@ -41,3 +41,8 @@ pub fn init() -> Result<(), &'static str> {
     Ok(())
 }
 ```
+
+Add following dependecy to your Mist service
+```
+mist-tools = { git = "https://github.com/anbclausen/mist-tools-rust.git" }
+```
