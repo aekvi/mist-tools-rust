@@ -7,7 +7,7 @@ object, that defines the actions and corresponding handlers.
 Optionally, you can provide an `init` function.
 
 ```rust
-use mist_tools_rust::{mist_service, Envelope};
+use mist_tools::{mist_service, Envelope};
 
 // Requires main returns Result<(), String>
 pub fn main() -> Result<(), String> {
