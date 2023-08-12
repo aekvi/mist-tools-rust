@@ -47,7 +47,7 @@ where
     Ok(())
 }
 
-fn get_payload() -> Result<Vec<u8>, &'static str> {
+pub fn get_payload() -> Result<Vec<u8>, &'static str> {
     let mut buffer = Vec::new();
     io::stdin()
         .read_to_end(&mut buffer)
@@ -55,29 +55,29 @@ fn get_payload() -> Result<Vec<u8>, &'static str> {
     Ok(buffer)
 }
 
-fn get_args() -> Result<(String, Envelope), String> {
-    let args = env::args().rev().take(2);
+pub fn get_args() -> Result<(String, Envelope), String> {
+    let args = env::args();
     if args.len() < 3 {
-        Err("Insufficient program arguments".to_string())
-    } else {
-        let mut action = None;
-        let mut envelope = None;
-        for (i, arg) in args.enumerate() {
-            match i {
-                0 => {
-                    action = Some(arg);
-                }
-                1 => {
-                    envelope = Some(Envelope::new(arg.as_str())?);
-                }
-                _ => unreachable!(),
+        return Err("Insufficient program arguments".to_string());
+    }
+    let args = args.rev().take(2);
+    let mut action = None;
+    let mut envelope = None;
+    for (i, arg) in args.enumerate() {
+        match i {
+            0 => {
+                action = Some(arg);
             }
-        }
-        match (action, envelope) {
-            (Some(a), Some(e)) => Ok((a, e)),
-            (None, _) => Err("Unable to get action".to_string()),
+            1 => {
+                envelope = Some(Envelope::new(arg.as_str())?);
+            }
             _ => unreachable!(),
         }
+    }
+    match (action, envelope) {
+        (Some(a), Some(e)) => Ok((a, e)),
+        (None, _) => Err("Unable to get action".to_string()),
+        _ => unreachable!(),
     }
 }
 

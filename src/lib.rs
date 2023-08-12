@@ -11,18 +11,21 @@ pub use mist::{
 
 #[macro_export]
 macro_rules! mist_service {
-    ( { actions: { $( $a:literal : $h:ident ) , * } $(, init: $i:ident )? } ) => {
+    ( { actions: { $( $action:literal : $handler:ident ) , * } $(, init: $init:ident )? } ) => {
         {
-            let mut v: Vec<(&'static str, Box<dyn FnOnce(Vec<u8>, Envelope) -> Result<(), String>>)> = Vec::new();
+            use mist_tools_rust::mist::{get_args, get_payload};
+            let (arg_action, envelope) = get_args()?;
+            match arg_action.as_str() {
             $(
-                v.push(($a, Box::new($h)));
+                $action => $handler(get_payload()?, envelope)?,
             )*
-            match true {
+                _ => ()
+            };
             $(
-                true => mist_service(v, $i).unwrap(),
+                let init_result = $init();
+                init_result?;
+                Ok(())
             )?
-                _ => mist_service(v, || Ok(())).unwrap()
-            }
         }
     };
 }
