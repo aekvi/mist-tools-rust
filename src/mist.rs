@@ -47,7 +47,7 @@ where
     Ok(())
 }
 
-fn get_payload() -> Result<Vec<u8>, &'static str> {
+pub fn get_payload() -> Result<Vec<u8>, &'static str> {
     let mut buffer = Vec::new();
     io::stdin()
         .read_to_end(&mut buffer)

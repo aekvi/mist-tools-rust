@@ -9,15 +9,18 @@ Optionally, you can provide an `init` function.
 ```rust
 use mist_tools_rust::{mist_service, Envelope};
 
-pub fn main() {
+// Requires main returns Result<(), String>
+pub fn main() -> Result<(), String> {
     mist_service!(
         {
             actions: {
-                // "action": handler
+                // (Required) "action": handler
+                // Type: FnOnce(Vec<u8>, Envelope) -> Result<(), String>
                 "hello": handle_english_action,
                 "hola": handle_spanish_action
             },
-            // Optional init field
+            // (Optional) init: init_handler
+            // Type FnOnce() -> Result<(), &'static str>
             init: init
         }
     )
