@@ -4,11 +4,26 @@ use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 
-pub struct ActionHandler<T>(&'static str, T)
+pub struct ActionHandler<T>(pub &'static str, pub T)
 where
     T: FnOnce(Vec<u8>, Envelope) -> Result<(), String>;
 
-pub fn mist_service<A, B>(handlers: Vec<ActionHandler<A>>, init: Option<B>) -> Result<(), String>
+/// Entry point for registering services on certain actions.
+///
+/// # Examples
+///
+/// ```
+/// use mist_tools_rust::{mist_service, ActionHandler, Envelope};
+///
+/// // Some dummy action
+/// pub fn handle_english_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
+///     Ok(())
+/// }
+///
+/// mist_service(vec![ActionHandler("hello", handle_english_action)], || Ok(()));
+/// ```
+///
+pub fn mist_service<A, B>(handlers: Vec<ActionHandler<A>>, init: B) -> Result<(), String>
 where
     A: FnOnce(Vec<u8>, Envelope) -> Result<(), String>,
     B: FnOnce() -> Result<(), &'static str>,
@@ -21,9 +36,7 @@ where
         }
     }
 
-    if let Some(f) = init {
-        f()?
-    }
+    init()?;
 
     Ok(())
 }
@@ -37,10 +50,29 @@ fn get_payload() -> Result<Vec<u8>, &'static str> {
 }
 
 fn get_args() -> Result<(String, Envelope), String> {
-    let args: Vec<_> = env::args().collect();
-    let action = args[args.len() - 2].clone();
-    let envelope = Envelope::new(args[args.len() - 1].as_str())?;
-    Ok((action, envelope))
+    let args = env::args().rev().take(2);
+    if args.len() < 3 {
+        Err("Insufficient program arguments".to_string())
+    } else {
+        let mut action = None;
+        let mut envelope = None;
+        for (i, arg) in args.enumerate() {
+            match i {
+                0 => {
+                    action = Some(arg);
+                }
+                1 => {
+                    envelope = Some(Envelope::new(arg.as_str())?);
+                }
+                _ => unreachable!(),
+            }
+        }
+        match (action, envelope) {
+            (Some(a), Some(e)) => Ok((a, e)),
+            (None, _) => Err("Unable to get action".to_string()),
+            _ => unreachable!(),
+        }
+    }
 }
 
 fn internal_post_to_rapids(
