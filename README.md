@@ -13,11 +13,13 @@ pub fn main() {
     mist_service!(
         {
             actions: {
-                // "action": handler
+                // (Required) "action": handler
+                // Type: FnOnce(Vec<u8>, Envelope) -> Result<(), String>
                 "hello": handle_english_action,
                 "hola": handle_spanish_action
             },
-            // Optional init field
+            // (Optional) init: init_handler
+            // Type FnOnce() -> Result<(), &'static str>
             init: init
         }
     )
