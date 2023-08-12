@@ -13,7 +13,7 @@ pub use mist::{
 macro_rules! mist_service {
     ( { actions: { $( $action:literal : $handler:ident ) , * } $(, init: $init:ident )? } ) => {
         {
-            use mist_tools_rust::mist::{get_args, get_payload};
+            use mist_tools::mist::{get_args, get_payload};
             let (arg_action, envelope) = get_args()?;
             match arg_action.as_str() {
             $(
