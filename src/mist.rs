@@ -56,14 +56,14 @@ fn get_payload() -> Result<Vec<u8>, &'static str> {
 }
 
 fn get_args() -> Result<(String, Envelope), &'static str> {
-    let args: Vec<_> = env::args().collect();
-    let action = args
-        .get(args.len() - 2)
-        .ok_or("unable to read 'action' from program arguments")?;
+    let mut args: Vec<_> = env::args().collect();
     let envelope_str = args
-        .last()
+        .pop()
         .ok_or("unable to read 'envelope' from program arguments")?;
     let envelope = Envelope::new(envelope_str.as_str())?;
+    let action = args
+        .pop()
+        .ok_or("unable to read 'action' from program arguments")?;
 
     Ok((action.to_string(), envelope))
 }
