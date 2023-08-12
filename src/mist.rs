@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{self, Read};
 
 pub struct Mist {
-    action: String,
+    action: &'static str,
     envelope: Envelope,
     payload: Vec<u8>,
 }
@@ -40,21 +40,24 @@ impl Mist {
         Ok(buffer)
     }
 
-    fn new(args: Vec<String>) -> Result<Self, &'static str> {
-        let action = &args[args.len() - 2];
-        let json = &args[args.len() - 1];
-        let envelope = Envelope::new(json)
-            .unwrap_or_else(|_| panic!("unable to parse envelope from {}", json));
+    fn new(args: Vec<&'static str>) -> Result<Self, String> {
+        let action = args[args.len() - 2];
+        let json = args[args.len() - 1];
+        let envelope = Envelope::new(json).map_err(|_| {
+            let mut s = "unable to parse envelope from ".to_owned();
+            s.push_str(json);
+            s
+        })?;
         let payload = Self::get_payload()?;
         Ok(Mist {
-            action: action.clone(),
+            action,
             envelope,
             payload,
         })
     }
 }
 
-pub fn service(args: Vec<String>) -> Result<Mist, &'static str> {
+pub fn service(args: Vec<&'static str>) -> Result<Mist, String> {
     Mist::new(args)
 }
 
