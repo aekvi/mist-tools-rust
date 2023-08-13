@@ -3,9 +3,9 @@ use serde::Deserialize;
 #[derive(Clone, Deserialize)]
 pub struct Envelope {
     #[serde(alias = "messageId")]
-    message_id: String,
+    pub message_id: String,
     #[serde(alias = "traceId")]
-    trace_id: String,
+    pub trace_id: String,
 }
 
 impl Envelope {

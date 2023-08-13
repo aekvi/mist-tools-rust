@@ -4,49 +4,6 @@ use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 
-pub type ActionHandler = (
-    &'static str,
-    Box<dyn FnOnce(Vec<u8>, Envelope) -> Result<(), String>>,
-);
-
-/// Entry point for registering services on certain actions.
-///
-/// # Examples
-///
-/// ```
-/// use mist_tools::{mist_service, Envelope};
-///
-/// // Some dummy action
-/// pub fn handle_english_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
-///     Ok(())
-/// }
-///
-/// // Some other dummy action
-/// pub fn handle_spanish_action(_buffer: Vec<u8>, _envelope: Envelope) -> Result<(), String> {
-///     println!("reached spanish handler!");
-///     Ok(())
-/// }
-///
-/// mist_service(vec![("hello", Box::new(handle_english_action)), ("hola", Box::new(handle_spanish_action))], || Ok(()));
-/// ```
-///
-pub fn mist_service<A>(handlers: Vec<ActionHandler>, init: A) -> Result<(), String>
-where
-    A: FnOnce() -> Result<(), &'static str>,
-{
-    let (arg_action, envelope) = get_args()?;
-    for (action, handler) in handlers {
-        if action == arg_action {
-            handler(get_payload()?, envelope)?;
-            break;
-        }
-    }
-
-    init()?;
-
-    Ok(())
-}
-
 pub fn get_payload() -> Result<Vec<u8>, &'static str> {
     let mut buffer = Vec::new();
     io::stdin()
@@ -65,7 +22,7 @@ pub fn get_args() -> Result<(String, Envelope), &'static str> {
         .pop()
         .ok_or("unable to read 'action' from program arguments")?;
 
-    Ok((action.to_string(), envelope))
+    Ok((action, envelope))
 }
 
 fn internal_post_to_rapids(
