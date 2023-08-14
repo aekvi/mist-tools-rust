@@ -1,5 +1,7 @@
 # mist-tools-rust
 
+Wrapper library for [Mist Cloud](https://mist-cloud.eu/).
+
 ## Usage
 
 In your main function, simply use the `mist_service!` macro. Provide it with a JSON-like
@@ -8,7 +10,7 @@ Optionally, you can provide an `init` function.
 See `examples/use.rs` for a more detailed example.
 
 ```rust
-use mist_tools::{mist_service, Envelope};
+use mist_tools::{mist_service};
 
 pub fn main() -> Result<(), String> {
     mist_service!(
