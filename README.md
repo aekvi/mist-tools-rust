@@ -1,6 +1,15 @@
-# mist-tools-rust
+# Mist Tools Rust
 
 Wrapper library for [Mist Cloud](https://mist-cloud.eu/).
+
+
+## Getting Started
+
+Add following dependecy to your Mist service:
+
+```
+mist-tools = { git = "https://github.com/anbclausen/mist-tools-rust.git" }
+```
 
 ## Usage
 
@@ -25,7 +34,20 @@ pub fn main() -> Result<(), String> {
 }
 ```
 
-Add following dependecy to your Mist service
-```
-mist-tools = { git = "https://github.com/anbclausen/mist-tools-rust.git" }
-```
+A handler can respond to the outside world with the following functions:
+- `post_event_to_rapids`
+- `post_str_to_rapids`
+- `post_to_rapids`
+- `reply_file_to_origin`
+- `reply_file_to_origin_with_content_type`
+- `reply_str_to_origin`
+- `reply_to_origin`
+
+Posting to *rapids* publishes a new event on the event stream that other services
+can potentially listen for.
+These functions end with `post_X_to_rapids`
+(also includes `post_to_rapids`).
+
+To respond to the client that initiated the session, you can use
+the functions with names containing `reply_X_to_origin`
+(also inlcudes `reply_file_to_origin_with_content_type` and `reply_to_origin`).
