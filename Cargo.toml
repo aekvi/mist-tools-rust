@@ -12,3 +12,8 @@ serde_json = "1.0.104"
 
 [[example]]
 name = "use"
+path = "examples/use.rs"
+
+[[example]]
+name = "minimal"
+path = "examples/minimal.rs"
