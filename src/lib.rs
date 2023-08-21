@@ -17,14 +17,13 @@ macro_rules! mist_service {
             let (arg_action, envelope) = get_args()?;
             match arg_action.as_str() {
             $(
-                $action => $handler(get_payload()?, envelope)?,
+                $action => $handler(get_payload()?, envelope),
             )*
-                _ => ()
-            };
+                _ => Ok(())
+            }
             $(
-                let init_result = $init();
-                init_result?;
-                Ok(())
+                ?; // Pop result from action above
+                Ok($init()?)
             )?
         }
     };
