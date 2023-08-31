@@ -8,7 +8,7 @@ Wrapper library for [Mist Cloud](https://mist-cloud.eu/).
 Add following dependecy to your Mist service:
 
 ```
-mist-tools = { git = "https://github.com/aekvi/mist-tools-rust.git", tag = "v0.1" }
+mist-tools = { git = "https://github.com/aekvi/mist-tools-rust.git", tag = "v0.1.1" }
 ```
 
 ## Usage
