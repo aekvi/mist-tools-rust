@@ -11,6 +11,13 @@ Add following dependecy to your Mist service:
 mist-tools = { git = "https://github.com/aekvi/mist-tools-rust.git", tag = "v0.1.1" }
 ```
 
+Also, Mist requires an entry point '`app`'. You can specify your `src/main.rs` file as this entry point by adding the following to your `Cargo.toml`:
+```
+[[bin]]
+name = "app"
+path = "src/main.rs"
+```
+
 ## Usage
 
 In your main function, simply use the `mist_service!` macro. Provide it with a JSON-like
